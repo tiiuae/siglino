@@ -1,0 +1,15 @@
+torch
+torchvision
+
+numpy==2.2.6
+Pillow==12.0.0
+tqdm==4.67.1
+einops==0.8.1
+
+transformers==4.57.1
+datasets==4.3.0
+open_clip_torch==3.2.0
+
+matplotlib==3.10.7
+scikit-learn==1.7.2
+scipy==1.16.3

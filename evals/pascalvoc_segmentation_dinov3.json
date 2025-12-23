@@ -1,0 +1,11 @@
+{
+  "dataset": "pascal_voc_2012",
+  "task": "segmentation",
+  "feature_type": "dinov3",
+  "metric_name": "mIoU",
+  "best_metric_value": 0.7877941656453296,
+  "best_epoch": 10,
+  "ckpt_path": "/lustre1/tier2/users/sofian.chaybouti/torchtitan_new/torchtitan/amoe_ckpt_paper_version.pt",
+  "num_classes": 21,
+  "ignore_index": 255
+}

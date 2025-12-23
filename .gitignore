@@ -1,0 +1,30 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+venv/
+env/
+.env
+
+# IDE settings
+.vscode/
+.idea/
+*.swp
+
+# Project specific output/test directories
+test_pca_maps_amoe/
+test_standalone_scripts/
+
+# Checkpoints and large files
+*.pt
+*.pth
+*.ckpt
+*.safetensors

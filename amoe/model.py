@@ -483,16 +483,15 @@ class AMOE(nn.Module):
         student_summary_siglip = self.siglip2_multihead_attention_pooling_head(h_sig, siglip_attn_mask)
 
         return {
-            "output": {
+            "patch_features": {
                 "dinov3": student_patch_dinov3,
                 "siglip2": student_patch_siglip,
                 "amoe": patch_feats,
             },
-            "summary": {
+            "summary_features": {
                 "dinov3": student_cls_dinov3,
                 "siglip2": student_summary_siglip,
                 "amoe": cls_feats,
             },
-            "padding_mask": padding_mask,  # Return for downstream use
         }
 

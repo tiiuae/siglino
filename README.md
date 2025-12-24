@@ -1,7 +1,7 @@
 # AMOE: Agglomerative Mixture-of-Experts Vision Foundation Models
 
 [![Project Website](https://img.shields.io/badge/Project-Website-blue)](https://sofianchay.github.io/amoe/)
-[![arXiv](https://img.shields.io/badge/arXiv-2512.xxxxx-b31b1b.svg)]()
+[![arXiv](https://img.shields.io/badge/arXiv-2512.20157-b31b1b.svg)](https://arxiv.org/abs/2512.20157)
 [![Hugging Face Models](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model(soon)-yellow)]()
 [![Hugging Face Datasets](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset(soon)-green)]()
 

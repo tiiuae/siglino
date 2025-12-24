@@ -49,13 +49,13 @@ with torch.no_grad():
     )
     
     # DINOv3-style patch features
-    patch_features = outputs["output"]["dinov3"]  # (N, L, 1024)
+    patch_features = outputs["patch_features"]["dinov3"]  # (N, L, 1024)
     
     # SigLIP2-style pooled features
-    pooled_features = outputs["summary"]["siglip2"]  # (N, 1152)
+    pooled_features = outputs["summary_features"]["siglip2"]  # (N, 1152)
     
     # Native model features
-    amoe_features = outputs["output"]["amoe"]  # (N, L, 768)
+    amoe_features = outputs["patch_features"]["amoe"]  # (N, L, 768)
 ```
 
 ## PCA Visualization

@@ -53,7 +53,7 @@ def process_preprocessed_batch(batch, model, device):
         spatial_shapes=spatial_shapes,
     )
 
-    summaries = outputs["summary"]  # {"dinov3": (B, D_dino), "siglip2": (B, D_siglip)}
+    summaries = outputs["summary_features"]  # {"dinov3": (B, D_dino), "siglip2": (B, D_siglip)}
 
     return {
         'summaries': summaries,

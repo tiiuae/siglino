@@ -121,7 +121,7 @@ class AMOELinearSeg(nn.Module):
         )
         
         # Get patch features for the desired type
-        feats = outputs["output"][self.feature_type]  # (N, L, D)
+        feats = outputs["patch_features"][self.feature_type]  # (N, L, D)
         
         N, L, D = feats.shape
         H_patch = int(spatial_shape[0, 0].item())

@@ -69,7 +69,7 @@ def extract_patch_features(
             compile=True,
         )
         
-        patch_feats = out["output"]
+        patch_feats = out["patch_features"]
         
         # Features are (N, L, D) - squeeze batch dimension
         feats_siglip = patch_feats["siglip2"].squeeze(0)  # (L, D)

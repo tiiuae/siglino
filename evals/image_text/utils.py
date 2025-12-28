@@ -68,10 +68,10 @@ def process_preprocessed_batch(batch, model, device):
             spatial_shapes=spatial_shapes,
         )
 
-        summaries = outputs["summary"]  # {"dinov3": ..., "siglip2": ...}
+        summaries = outputs["summary_features"]  # {"dinov3": ..., "siglip2": ...}
         
         # Extract patch tokens (excluding padding) for dinotxt head
-        student_patch_dinov3 = outputs["output"]["dinov3"]  # (N, L, D) - includes padding
+        student_patch_dinov3 = outputs["patch_features"]["dinov3"]  # (N, L, D) - includes padding
         
         patch_tokens_list_dinov3 = []
         for i in range(len(student_patch_dinov3)):

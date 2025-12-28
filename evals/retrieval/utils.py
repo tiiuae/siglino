@@ -63,8 +63,8 @@ def process_preprocessed_batch(processed, model, device):
         spatial_shapes=spatial_shapes,
     )
 
-    summaries = outputs["summary"]
-    student_patch_dinov3 = outputs["output"]["dinov3"]
+    summaries = outputs["summary_features"]
+    student_patch_dinov3 = outputs["patch_features"]["dinov3"]
 
     patch_tokens_list_dinov3 = []
     for i in range(len(student_patch_dinov3)):

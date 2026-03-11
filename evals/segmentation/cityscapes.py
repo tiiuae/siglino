@@ -71,7 +71,7 @@ def evaluate_cityscapes(model, dataloader, criterion, num_classes: int, ignore_i
     model.eval()
     val_loss = 0.0
     k = num_classes
-    conf = np.zeros((k, k), dtype=np.int64)
+    conf = torch.zeros((k, k), dtype=torch.int64, device=device)
 
     for batch in dataloader:
 
@@ -92,8 +92,9 @@ def evaluate_cityscapes(model, dataloader, criterion, num_classes: int, ignore_i
             n = k
             idx = (t * n + p).view(-1)
             binc = torch.bincount(idx, minlength=n * n)
-            conf += binc.view(n, n).cpu().numpy()
+            conf += binc.view(n, n)
 
+    conf = conf.cpu().numpy()
     inter = np.diag(conf)
     union = conf.sum(1) + conf.sum(0) - inter
     valid = union > 0
@@ -124,6 +125,9 @@ def main():
     val_dataset = HFCityscapesDataset(split='validation', image_size=args.image_size, repo_id=args.hf_repo)
     test_dataset = HFCityscapesDataset(split='test', image_size=args.image_size, repo_id=args.hf_repo)
 
+    # Calculate max patches based on image size (patch size is 16)
+    max_patches = (args.image_size // 16) ** 2
+
     backbone, image_processor = build_backbone_and_processor(
         ckpt_path=args.ckpt_path,
         device=device,
@@ -138,7 +142,7 @@ def main():
         image_size=args.image_size
     ).to(device).to(dtype=torch.bfloat16)
 
-    collate = make_collate_fn(image_processor)
+    collate = make_collate_fn(image_processor, max_num_patches=max_patches)
     train_loader = DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=True,
         num_workers=args.num_workers, pin_memory=True, collate_fn=collate

@@ -25,6 +25,11 @@ class AMOEArgs:
         route_scale=0.8633,
         activation="relu2",
     ))
+
+    # Dense FFN configuration
+    first_n_layers_dense: int = 0  # number of initial layers using dense FFN instead of MoE
+    ffn_dim: int | None = None  # hidden dim for dense FFN layers (None = use moe_dim)
+    activation: str = "silu"  # activation for dense FFN layers
     
     # Vision settings
     channel_size: int = 3
@@ -42,6 +47,7 @@ class AMOEArgs:
     norm_eps: float = 1e-5
     use_qk_norm: bool = True
     use_tok_norm: bool = True
+    parameterized_norm: bool = True  # True = nn.RMSNorm (learnable), False = F.rms_norm (no params)
     
     # Distillation settings
     n_storage_tokens: int = 4  # number of register tokens
@@ -71,5 +77,88 @@ amoe_configs = {
         enable_3d_rope=True,
         use_qk_norm=True,
     ),
+
+    "ultrasparse": AMOEArgs(
+        n_layers=18,
+        n_heads=8,
+        head_dim=128,
+        n_kv_heads=8,
+        dim=768,
+        moe_dim=384,
+        moe_args=MoEArgs(
+            num_experts=28,
+            num_shared_experts=0,
+            top_k=2,
+            score_before_experts=False,
+        ),
+        spatial_patch_size=16,
+        enable_3d_rope=True,
+        use_qk_norm=True,
+    ),
+
+    "dense-L": AMOEArgs(
+        n_layers=18,
+        n_heads=16,
+        head_dim=80,
+        n_kv_heads=16,
+        dim=1280,
+        moe_dim=384,
+        moe_args=MoEArgs(
+            num_experts=28,
+            num_shared_experts=0,
+            top_k=6,
+            score_before_experts=False,
+        ),
+        first_n_layers_dense=18,
+        ffn_dim=5120,
+        spatial_patch_size=16,
+        enable_3d_rope=True,
+        use_qk_norm=True,
+    ),
+
+    "dense-XS": AMOEArgs(
+        n_layers=12,
+        n_heads=6,
+        head_dim=64,
+        n_kv_heads=6,
+        dim=384,
+        moe_dim=0,
+        moe_args=MoEArgs(
+            num_experts=1,
+            num_shared_experts=0,
+            top_k=1,
+            score_before_experts=False,
+        ),
+        first_n_layers_dense=12,
+        ffn_dim=1536,
+        activation="silu",
+        spatial_patch_size=16,
+        enable_3d_rope=True,
+        use_qk_norm=True,
+        parameterized_norm=False,
+    ),
+
+    "dense-S": AMOEArgs(
+        n_layers=12,
+        n_heads=8,
+        head_dim=64,
+        n_kv_heads=8,
+        dim=512,
+        moe_dim=0,
+        moe_args=MoEArgs(
+            num_experts=1,
+            num_shared_experts=0,
+            top_k=1,
+            score_before_experts=False,
+        ),
+        first_n_layers_dense=12,
+        ffn_dim=2048,
+        activation="silu",
+        spatial_patch_size=16,
+        enable_3d_rope=True,
+        use_qk_norm=True,
+        parameterized_norm=False,
+    ),
+
 }
 

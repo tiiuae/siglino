@@ -37,6 +37,11 @@ def build_backbone_and_processor(
         do_resize=False
     )
     
+    # Freeze backbone
+    for param in model.parameters():
+        param.requires_grad = False
+    model.eval()
+    
     # Wrap in backbone interface
     backbone = AMOEBackbone(model, feature_type=feature_type)
     
@@ -91,12 +96,15 @@ class AMOELinearSeg(nn.Module):
     ):
         super().__init__()
         self.backbone = backbone
+        for param in self.backbone.parameters():
+            param.requires_grad = False
+        self.backbone.eval()
         self.feature_type = feature_type
         self.image_size = image_size
         self.patch_size = backbone.patch_size
         
         # Linear segmentation head
-        self.head = nn.Conv2d(feature_dim, num_classes, kernel_size=1)
+        self.head = nn.LazyConv2d(num_classes, kernel_size=1)
     
     def forward(
         self,
@@ -114,11 +122,12 @@ class AMOELinearSeg(nn.Module):
             Segmentation logits (N, num_classes, H, W)
         """
         # Extract features
-        outputs = self.backbone(
+        with torch.inference_mode():
+            outputs = self.backbone(
             pixel_values=pixel_values,
             spatial_shapes=spatial_shape,
             compile=True,
-        )
+            )
         
         # Get patch features for the desired type
         feats = outputs["patch_features"][self.feature_type]  # (N, L, D)
@@ -129,7 +138,7 @@ class AMOELinearSeg(nn.Module):
         
         # Reshape to spatial grid
         feats = feats.view(N, H_patch, W_patch, D)
-        feats = feats.permute(0, 3, 1, 2)  # (N, D, H_patch, W_patch)
+        feats = feats.permute(0, 3, 1, 2).contiguous()  # (N, D, H_patch, W_patch)
         
         # Apply segmentation head
         logits = self.head(feats)  # (N, C, H_patch, W_patch)
@@ -141,7 +150,6 @@ class AMOELinearSeg(nn.Module):
             mode="bilinear",
             align_corners=False,
         )
-        
         return logits
     
     def forward_from_precomputed(self, feats: torch.Tensor) -> torch.Tensor:

@@ -9,6 +9,7 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from tqdm import tqdm
+import time
 
 from utils import (
     build_backbone_and_processor,
@@ -71,18 +72,18 @@ def get_dataset(root_dir: str, image_size: int):
 @torch.no_grad()
 def evaluate_seg(model, dataloader, criterion, num_classes: int, device='cuda'):
     model.eval()
-    val_loss = 0.0
+    val_loss = torch.zeros((), device=device, dtype=torch.float32)
     k = num_classes - 1  # classes excluding ignore 0
-    conf = np.zeros((k, k), dtype=np.int64)
+    conf = torch.zeros((k, k), dtype=torch.int64, device=device)
 
     for batch in dataloader:
         pixel_values = batch["pixel_values"].to(device, non_blocking=True)
         spatial_shape = batch["spatial_shape"].to(device, non_blocking=True)
         targets = batch["targets"].to(device, non_blocking=True)  # Long
-
-        logits = model(pixel_values, spatial_shape)
-        loss = criterion(logits, targets)
-        val_loss += loss.item()
+        with torch.autocast("cuda", dtype=torch.bfloat16):
+            logits = model(pixel_values, spatial_shape)
+            loss = criterion(logits, targets)
+            val_loss += loss.detach().float()
 
         preds = logits.argmax(dim=1)  # (B,H,W)
         t = targets
@@ -98,14 +99,15 @@ def evaluate_seg(model, dataloader, criterion, num_classes: int, device='cuda'):
                 n = k
                 idx = (t * n + p).view(-1)
                 binc = torch.bincount(idx, minlength=n * n)
-                conf += binc.view(n, n).cpu().numpy()
+                conf += binc.view(n, n)
 
+    conf = conf.cpu().numpy()
     inter = np.diag(conf)
     union = conf.sum(1) + conf.sum(0) - inter
     valid = union > 0
     miou = float((inter[valid] / (union[valid] + 1e-10)).mean()) if valid.any() else 0.0
-    val_loss = val_loss / max(1, len(dataloader))
-    return val_loss, miou
+    val_loss = (val_loss / max(1, len(dataloader))).item()
+    return float(val_loss), miou
 
 # --------------------
 # Args
@@ -113,13 +115,16 @@ def evaluate_seg(model, dataloader, criterion, num_classes: int, device='cuda'):
 
 def parse_args():
     p = argparse.ArgumentParser("ADE20K segmentation evaluation using Falcon-Omni (distilled, multi-teacher packing) backbone")
-    p.add_argument("--root_dir", type=str, required=True, help="Root directory of ADE20K dataset")
+    p.add_argument("--root_dir", type=str, default="/lustre1/tier2/users/sofian.chaybouti/ade20k/ADEChallengeData2016", help="Root directory of ADE20K dataset")
     p.add_argument("--ckpt_path", type=str, required=True, help="Path to Falcon-Omni distilled checkpoint (training output checkpoint)")
     p.add_argument("--feature_type", type=str, default="dinov3", choices=["dinov3", "amoe", "siglip2"])
     p.add_argument("--batch_size", type=int, default=16)
     p.add_argument("--epochs", type=int, default=10)
     p.add_argument("--lr", type=float, default=1e-3)
     p.add_argument("--num_workers", type=int, default=4)
+    p.add_argument("--prefetch_factor", type=int, default=4, help="Batches prefetched per worker (only if num_workers>0)")
+    p.add_argument("--persistent_workers", action="store_true", help="Keep DataLoader workers alive (only if num_workers>0)")
+    p.add_argument("--log_every", type=int, default=50, help="Log every N train steps")
     p.add_argument("--num_classes", type=int, default=151, help="For segmentation (includes ignore=0)")
     p.add_argument("--out_dir", type=str, default=None, help="Directory to write JSON metrics; defaults to derived training output dir")
     p.add_argument("--image_size", type=int, default=256, help="Image size")
@@ -138,22 +143,33 @@ def main():
     image_size = args.image_size
     train_dataset, val_dataset = get_dataset(args.root_dir, image_size=image_size)
 
+    # Calculate max patches based on image size (patch size is 16)
+    max_patches = (image_size // 16) ** 2
+
     # Backbone + processor
-    backbone, image_processor = build_backbone_and_processor(
-        ckpt_path=args.ckpt_path,
-        device=device,
-        feature_type=args.feature_type,
-    )
+    with torch.inference_mode():
+        backbone, image_processor = build_backbone_and_processor(
+            ckpt_path=args.ckpt_path,
+            device=device,
+            feature_type=args.feature_type,
+        )
 
     # Dataloaders
-    collate = make_collate_fn(image_processor)
+    collate = make_collate_fn(image_processor, max_num_patches=max_patches)
+    loader_kwargs = dict(
+        num_workers=args.num_workers,
+        pin_memory=True,
+        collate_fn=collate,
+    )
+    if args.num_workers > 0:
+        loader_kwargs["prefetch_factor"] = max(2, args.prefetch_factor)
+        loader_kwargs["persistent_workers"] = bool(args.persistent_workers)
+
     train_loader = DataLoader(
-        train_dataset, batch_size=args.batch_size, shuffle=True,
-        num_workers=args.num_workers, pin_memory=True, collate_fn=collate
+        train_dataset, batch_size=args.batch_size, shuffle=True, **loader_kwargs
     )
     val_loader = DataLoader(
-        val_dataset, batch_size=args.batch_size, shuffle=False,
-        num_workers=args.num_workers, pin_memory=True, collate_fn=collate
+        val_dataset, batch_size=args.batch_size, shuffle=False, **loader_kwargs
     )
 
     # Feature dims
@@ -167,7 +183,7 @@ def main():
     ).to(device).to(dtype=torch.bfloat16)
 
     criterion = nn.CrossEntropyLoss(ignore_index=0)
-    optimizer = optim.AdamW(model.head.parameters(), lr=args.lr, weight_decay=1e-3)
+    optimizer = optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr, weight_decay=1e-3)
 
     # Train/eval
     best_metric = None
@@ -176,20 +192,23 @@ def main():
 
     for epoch in range(args.epochs):
         model.train()
-        train_loss = 0.0
-        for batch in tqdm(train_loader, desc=f"Epoch {epoch+1}/{args.epochs}"):
+        train_loss = torch.zeros((), device=device, dtype=torch.float32)
+        for step, batch in enumerate(tqdm(train_loader, desc=f"Epoch {epoch+1}/{args.epochs}"), start=1):
             pixel_values = batch["pixel_values"].to(device, non_blocking=True)
             spatial_shape = batch["spatial_shape"].to(device, non_blocking=True)
             targets = batch["targets"].to(device, non_blocking=True)
-
             optimizer.zero_grad(set_to_none=True)
             logits = model(pixel_values, spatial_shape)
             loss = criterion(logits, targets)
             loss.backward()
             optimizer.step()
-            train_loss += loss.item()
+            train_loss += loss.detach().float()
 
-        train_loss /= max(1, len(train_loader))
+            # Avoid synchronizing every step; only log occasionally.
+            if args.log_every > 0 and (step % args.log_every == 0):
+                tqdm.write(f"step {step}: loss={float((train_loss / step).item()):.4f}")
+
+        train_loss = float((train_loss / max(1, len(train_loader))).item())
         val_loss, metric = evaluate_seg(model, val_loader, criterion, num_classes=args.num_classes, device=device)
         is_better = (best_metric is None) or (metric > best_metric)  # Higher is better
 

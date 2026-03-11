@@ -102,9 +102,11 @@ class TransformerBlock(nn.Module):
     def __init__(self, layer_id: int, args: AMOEArgs):
         super().__init__()
         self.dim = args.dim
+        self.parameterized_norm = args.parameterized_norm
 
-        self.attention_norm = nn.RMSNorm(args.dim, eps=args.norm_eps)
-        self.ffn_norm = nn.RMSNorm(args.dim, eps=args.norm_eps)
+        if args.parameterized_norm:
+            self.attention_norm = nn.RMSNorm(args.dim, eps=args.norm_eps)
+            self.ffn_norm = nn.RMSNorm(args.dim, eps=args.norm_eps)
 
         self.attention = Attention(
             dim=args.dim,
@@ -117,8 +119,13 @@ class TransformerBlock(nn.Module):
             use_sink_attn=True,  # Match torchtitan checkpoint
         )
 
-        # MoE layer
-        if args.moe_args and args.moe_args.num_experts > 0:
+        # Dense FFN or MoE layer
+        use_dense = layer_id < args.first_n_layers_dense
+        if use_dense:
+            ffn_hidden = args.ffn_dim if args.ffn_dim is not None else args.moe_dim
+            self.feed_forward = FeedForward(args.dim, ffn_hidden, activation=args.activation)
+            self.moe_enabled = False
+        elif args.moe_args and args.moe_args.num_experts > 0:
             self.moe = MoE(args.moe_args, dim=args.dim, hidden_dim=args.moe_dim)
             self.moe_enabled = True
         else:
@@ -140,8 +147,12 @@ class TransformerBlock(nn.Module):
         compile: bool = True,
     ) -> torch.Tensor:
         B, S, D = x.shape
+        if self.parameterized_norm:
+            x_norm = self.attention_norm(x)
+        else:
+            x_norm = F.rms_norm(x, (x.size(-1),))
         h = x + self.attention(
-            self.attention_norm(x),
+            x_norm,
             freqs_cis,
             freqs_cis_2d,
             pos_thw,
@@ -149,7 +160,14 @@ class TransformerBlock(nn.Module):
             compile=compile,
         )
 
-        out = h + self.moe(self.ffn_norm(h))
+        if self.parameterized_norm:
+            h_norm = self.ffn_norm(h)
+        else:
+            h_norm = F.rms_norm(h, (h.size(-1),))
+        if self.moe_enabled:
+            out = h + self.moe(h_norm)
+        else:
+            out = h + self.feed_forward(h_norm)
 
         return out
 

@@ -47,6 +47,12 @@ class ImageNetDataset(Dataset):
             image = Image.open(image_path)
             if hasattr(image, "mode") and image.mode != "RGB":
                 image = image.convert("RGB")
+            
+            # Skip images smaller than patch size (16)
+            if image.width < 16 or image.height < 16:
+                print(f"Skipping small image: {image_path} with size {image.size}")
+                return None
+            
             # Parent folder is category (wnid)
             category = image_path.parent.stem
             class_id = self.cat_to_id[category]

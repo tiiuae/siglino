@@ -1,4 +1,6 @@
-# AMOE: Agglomerative Mixture-of-Experts Vision Foundation Models
+# AMoE: Agglomerative Mixture-of-Experts Vision Foundation Models
+
+**Accepted at CVPR 2026**
 
 [![Project Website](https://img.shields.io/badge/Project-Website-blue)](https://sofianchay.github.io/amoe/)
 [![arXiv](https://img.shields.io/badge/arXiv-2512.20157-b31b1b.svg)](https://arxiv.org/abs/2512.20157)
@@ -9,53 +11,105 @@ A vision encoder distilled from DINOv3 and SigLIP2 teachers, supporting multi-re
 
 ![Main fig](./main_fig.png)
 
+## Model Zoo
+
+| Model | Architecture | Active Params | Total Params | Config Name | Checkpoint |
+|-------|-------------|--------------|-------------|-------------|------------|
+| AMoE | MoE (top-6/28) | 0.15B | 0.6B | `18-layers-distillation` | [Download](https://github.com/tiiuae/amoe/releases/download/AMoE-checkpoint/amoe_ckpt_paper_version.pt) |
+| AMoE-Ultrasparse | MoE (top-2/28) | 0.15B | 0.6B | `ultrasparse` | [Download](https://github.com/tiiuae/amoe/releases/download/AMoE-checkpoint/ultrasparse.pt) |
+| AMoE-Dense-L | Dense | 0.6B | 0.6B | `dense-L` | [Download](https://github.com/tiiuae/amoe/releases/download/AMoE-checkpoint/dense-L.pt) |
+| AMoE-Dense-S | Dense | 0.07B | 0.07B | `dense-S` | [Download](https://github.com/tiiuae/amoe/releases/download/AMoE-checkpoint/dense-S.pt) |
+| AMoE-Dense-XS | Dense | 0.03B | 0.03B | `dense-XS` | [Download](https://github.com/tiiuae/amoe/releases/download/AMoE-checkpoint/dense-XS.pt) |
 
 ## Installation
 
 ```bash
-wget https://github.com/tiiuae/amoe/releases/download/AMoE-checkpoint/amoe_ckpt_paper_version.pt  
 pip install -r requirements.txt
 pip install -e .
 ```
 
 ## Quick Start
 
+### AMoE-Ultrasparse (MoE, 0.15B active / 0.6B total)
+
 ```python
 from amoe import load_amoe_model
 from PIL import Image
 import torch
 
-# Load model
+# Download checkpoint
+# wget https://github.com/tiiuae/amoe/releases/download/AMoE-checkpoint/ultrasparse.pt
+
 model, processor = load_amoe_model(
-    checkpoint_path="path/to/checkpoint.pt",
+    checkpoint_path="ultrasparse.pt",
+    config_name="ultrasparse",
     device="cuda",
 )
 model = model.to(torch.bfloat16)
 
-# Load and preprocess image
 image = Image.open("image.jpg")
 inputs = processor(image, return_tensors="pt")
 
-# Get features
 with torch.no_grad():
     pixel_values = inputs["pixel_values"].to("cuda", dtype=torch.bfloat16)
     spatial_shapes = inputs["spatial_shape"].to("cuda")
     padding_mask = inputs["padding_mask"].to("cuda")
-    
+
     outputs = model(
         pixel_values=pixel_values,
         spatial_shapes=spatial_shapes,
         padding_mask=padding_mask
     )
-    
+
     # DINOv3-style patch features
     patch_features = outputs["patch_features"]["dinov3"]  # (N, L, 1024)
-    
+
     # SigLIP2-style pooled features
     pooled_features = outputs["summary_features"]["siglip2"]  # (N, 1152)
-    
+
     # Native model features
     amoe_features = outputs["patch_features"]["amoe"]  # (N, L, 768)
+```
+
+### AMoE-Dense-L (Dense, 0.6B)
+
+```python
+from amoe import load_amoe_model
+from PIL import Image
+import torch
+
+# Download checkpoint
+# wget https://github.com/tiiuae/amoe/releases/download/AMoE-checkpoint/dense-L.pt
+
+model, processor = load_amoe_model(
+    checkpoint_path="dense-L.pt",
+    config_name="dense-L",
+    device="cuda",
+)
+model = model.to(torch.bfloat16)
+
+image = Image.open("image.jpg")
+inputs = processor(image, return_tensors="pt")
+
+with torch.no_grad():
+    pixel_values = inputs["pixel_values"].to("cuda", dtype=torch.bfloat16)
+    spatial_shapes = inputs["spatial_shape"].to("cuda")
+    padding_mask = inputs["padding_mask"].to("cuda")
+
+    outputs = model(
+        pixel_values=pixel_values,
+        spatial_shapes=spatial_shapes,
+        padding_mask=padding_mask
+    )
+
+    # DINOv3-style patch features
+    patch_features = outputs["patch_features"]["dinov3"]  # (N, L, 1024)
+
+    # SigLIP2-style pooled features
+    pooled_features = outputs["summary_features"]["siglip2"]  # (N, 1152)
+
+    # Native model features
+    amoe_features = outputs["patch_features"]["amoe"]  # (N, L, 1280)
 ```
 
 ## PCA Visualization
@@ -74,7 +128,7 @@ Sample output:
 
 ![PCA visualization sample 1](pca_maps_amoe/pca_visualizations/pca_instance.png)
 
-## HF usage 
+## HF usage
 
 ```python
 import torch
@@ -82,7 +136,7 @@ from PIL import Image
 from transformers import AutoModel, AutoImageProcessor
 
 # Load model and processor
-model_id = "tiiuae/amoe" 
+model_id = "tiiuae/amoe"
 model = AutoModel.from_pretrained(model_id, trust_remote_code=True).to("cuda", dtype=torch.bfloat16)
 processor = AutoImageProcessor.from_pretrained(model_id, trust_remote_code=True)
 

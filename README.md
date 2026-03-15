@@ -2,10 +2,11 @@
 
 **Accepted at CVPR 2026**
 
-[Project Website](https://sofianchay.github.io/amoe/)
-[arXiv](https://arxiv.org/abs/2512.20157)
-[Hugging Face Models](https://huggingface.co/tiiuae/amoe)
-[Hugging Face Datasets]()
+[![Project Website](https://img.shields.io/badge/Project-Website-blue)](https://sofianchay.github.io/amoe/)
+[![arXiv](https://img.shields.io/badge/arXiv-2512.20157-b31b1b.svg)](https://arxiv.org/abs/2512.20157)
+[![Hugging Face Models](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model-green)](https://huggingface.co/collections/tiiuae/amoe-agglomerative-moe-vision-foundation-models)
+[![Hugging Face Datasets](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset(soon)-green)]()
+
 
 A vision encoder distilled from DINOv3 and SigLIP2 teachers, supporting multi-resolution image understanding with Mixture-of-Experts (MoE) architecture.
 

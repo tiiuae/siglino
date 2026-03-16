@@ -181,7 +181,7 @@ python pca_maps.py \
 
 Sample output:
 
-PCA visualization sample 1
+![PCA visualization sample 1](pca_maps_amoe/pca_visualizations/pca_instance.png)
 
 ## HF usage
 

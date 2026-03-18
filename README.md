@@ -7,7 +7,7 @@
 [![Hugging Face Models](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model-yellow)](https://huggingface.co/collections/tiiuae/siglino-vision-foundation-models)
 [![Hugging Face Datasets](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset(soon)-green)]()
 
-This work stems from the **CVPR 2026 SigLino paper**, which designs and applies distillation into a Mixture-of-Experts (MoE) vision architecture. We have chosen the name **SigLino** for better clarity (SigLIP2 + DINOv3).
+This work stems from the **CVPR 2026 AMoE paper**, which designs and applies distillation into a Mixture-of-Experts (MoE) vision architecture. We have chosen the name **SigLino** for better clarity (SigLIP2 + DINOv3).
 
 SigLino is a vision encoder distilled from DINOv3 and SigLIP2 teachers, supporting multi-resolution image understanding with a Mixture-of-Experts (MoE) architecture.
 
@@ -20,11 +20,11 @@ SigLino is a vision encoder distilled from DINOv3 and SigLIP2 teachers, supporti
 
 | Model           | Architecture   | Active Params | Total Params | Config Name           | Checkpoint                                                                                      |
 | --------------- | -------------- | ------------- | ------------ | --------------------- | ----------------------------------------------------------------------------------------------- |
-| SigLino-MoE-0.3-0.6B | MoE (top-6/28) | 0.3B          | 0.6B         | `siglino-moe-0.3B`    | [Download](https://github.com/tiiuae/siglino/releases/download/SigLino-checkpoint/siglino-moe-0.3B.pt)   |
-| SigLino-MoE-0.15-0.6B | MoE (top-2/28) | 0.15B         | 0.6B         | `siglino-moe-0.15B`   | [Download](https://github.com/tiiuae/siglino/releases/download/SigLino-checkpoint/siglino-moe-0.15B.pt)  |
-| SigLino-0.6B    | Dense          | 0.6B          | 0.6B         | `siglino-0.6B`        | [Download](https://github.com/tiiuae/siglino/releases/download/SigLino-checkpoint/siglino-0.6B.pt)       |
-| SigLino-70M     | Dense          | 0.07B         | 0.07B        | `siglino-70M`         | [Download](https://github.com/tiiuae/siglino/releases/download/SigLino-checkpoint/siglino-70M.pt)        |
-| SigLino-30M     | Dense          | 0.03B         | 0.03B        | `siglino-30M`         | [Download](https://github.com/tiiuae/siglino/releases/download/SigLino-checkpoint/siglino-30M.pt)        |
+| SigLino-MoE-0.3-0.6B | MoE (top-6/28) | 0.3B          | 0.6B         | `siglino-moe-0.3B`    | [Download](https://github.com/tiiuae/amoe/releases/download/AMoE-checkpoint/amoe-0.3B.pt)   |
+| SigLino-MoE-0.15-0.6B | MoE (top-2/28) | 0.15B         | 0.6B         | `siglino-moe-0.15B`   | [Download](https://github.com/tiiuae/amoe/releases/download/AMoE-checkpoint/amoe-0.15B.pt)  |
+| SigLino-0.6B    | Dense          | 0.6B          | 0.6B         | `siglino-0.6B`        | [Download](https://github.com/tiiuae/amoe/releases/download/AMoE-checkpoint/dense-0.6B.pt)       |
+| SigLino-70M     | Dense          | 0.07B         | 0.07B        | `siglino-70M`         | [Download](https://github.com/tiiuae/amoe/releases/download/AMoE-checkpoint/dense-70M.pt)        |
+| SigLino-30M     | Dense          | 0.03B         | 0.03B        | `siglino-30M`         | [Download](https://github.com/tiiuae/amoe/releases/download/AMoE-checkpoint/dense-30M.pt)        |
 
 
 ## Installation
@@ -44,10 +44,10 @@ from PIL import Image
 import torch
 
 # Download checkpoint
-# wget https://github.com/tiiuae/siglino/releases/download/SigLino-checkpoint/siglino-moe-0.15B.pt
+# wget https://github.com/tiiuae/amoe/releases/download/AMoE-checkpoint/amoe-0.15B.pt
 
 model, processor = load_siglino_model(
-    checkpoint_path="siglino-moe-0.15B.pt",
+    checkpoint_path="amoe-0.15B.pt",
     config_name="siglino-moe-0.15B",
     device="cuda",
 )
@@ -85,10 +85,10 @@ from PIL import Image
 import torch
 
 # Download checkpoint
-# wget https://github.com/tiiuae/siglino/releases/download/SigLino-checkpoint/siglino-0.6B.pt
+# wget https://github.com/tiiuae/amoe/releases/download/AMoE-checkpoint/dense-0.6B.pt
 
 model, processor = load_siglino_model(
-    checkpoint_path="siglino-0.6B.pt",
+    checkpoint_path="dense-0.6B.pt",
     config_name="siglino-0.6B",
     device="cuda",
 )
@@ -218,12 +218,12 @@ summary_features = outputs["summary_features"]["siglip2"] # (Batch, 1152)
 
 ## Citation
 
-If you use SigLino in your research, please cite:
+If you use this work in your research, please cite:
 
 ```bibtex
-@article{chaybouti2025siglino,
-  title={SigLino: Vision Foundation Models distilled from SigLIP2 and DINOv3},
-  author={Chaybouti, Sofian and Narayan, Sanath and Dahou, Yasser context, Le Khac, Phuc H. and Singh, Ankit and Huynh, Ngoc Dung and Para, Wamiq Reyaz and Kuehne, Hilde and Hacid, Hakim},
+@article{chaybouti2025amoe,
+  title={AMoE: Agglomerative Mixture-of-Experts Vision Foundation Models},
+  author={Chaybouti, Sofian and Narayan, Sanath and Dahou, Yasser and Le Khac, Phuc H. and Singh, Ankit and Huynh, Ngoc Dung and Para, Wamiq Reyaz and Kuehne, Hilde and Hacid, Hakim},
   journal={arXiv preprint arXiv:2512.20157},
   year={2025}
 }

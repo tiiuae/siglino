@@ -221,10 +221,11 @@ summary_features = outputs["summary_features"]["siglip2"] # (Batch, 1152)
 If you use this work in your research, please cite:
 
 ```bibtex
-@article{chaybouti2025amoe,
-  title={AMoE: Agglomerative Mixture-of-Experts Vision Foundation Models},
-  author={Chaybouti, Sofian and Narayan, Sanath and Dahou, Yasser and Le Khac, Phuc H. and Singh, Ankit and Huynh, Ngoc Dung and Para, Wamiq Reyaz and Kuehne, Hilde and Hacid, Hakim},
-  journal={arXiv preprint arXiv:2512.20157},
-  year={2025}
+@inproceedings{chaybouti2026siglino,
+  title={SigLino: Efficient Multi-Teacher Distillation for Agglomerative Vision Foundation Models},
+  author={Chaybouti, Sofian and Narayan, Sanath and Dahou, Yasser and Khắc, Ph{\'u}c H L{\^e} and Singh, Ankit and Huynh, Ngoc and Para, Wamiq Reyaz and Kuehne, Hilde and Hacid, Hakim},
+  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+  pages={10071--10081},
+  year={2026}
 }
 ```

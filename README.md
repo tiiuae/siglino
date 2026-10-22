@@ -5,7 +5,11 @@
 [![Project Website](https://img.shields.io/badge/Project-Website-blue)](https://sofianchay.github.io/amoe/)
 [![arXiv](https://img.shields.io/badge/arXiv-2512.20157-b31b1b.svg)](https://arxiv.org/abs/2512.20157)
 [![Hugging Face Models](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-yellow)](https://huggingface.co/collections/tiiuae/siglino-vision-foundation-models-siglip2-dinov3)
-[![Hugging Face Datasets](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset(soon)-green)]()
+[![Hugging Face Datasets](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset-green)](https://huggingface.co/datasets/tiiuae/OpenLVD-200m)
+
+## News
+
+- **2026-10-22**: We release [OpenLVD-200M](https://huggingface.co/datasets/tiiuae/OpenLVD-200m), the training data. 197.7M curated image URLs with captions and 4-level cluster ids. This is an updated version of the set used in the paper.
 
 This work stems from the **CVPR 2026 AMoE paper**, which designs and applies distillation into a Mixture-of-Experts (MoE) vision architecture. We have chosen the name **SigLino** for better clarity (SigLIP2 + DINOv3).
 
